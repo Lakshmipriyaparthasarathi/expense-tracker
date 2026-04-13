@@ -7,29 +7,53 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connect MongoDB
-mongoose.connect("mongodb+srv://lakshmipriyasarathi_db_user:P59u4JPapOXBFdy9@cluster0.jgahvno.mongodb.net/?appName=Cluster0");
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB connected!'))
+  .catch(err => console.log('MongoDB error:', err));
 
-// Serve HTML file
+// Expense Model ← THIS WAS MISSING!
+const ExpenseSchema = new mongoose.Schema({
+  desc: String,
+  amount: Number,
+  category: String,
+  date: String
+});
+const Expense = mongoose.model('Expense', ExpenseSchema);
+
+// Serve HTML
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Your existing routes below...
+// Routes
 app.get('/expenses', async (req, res) => {
-  const expenses = await Expense.find();
-  res.json(expenses);
+  try {
+    const expenses = await Expense.find();
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/expenses', async (req, res) => {
-  const expense = new Expense(req.body);
-  await expense.save();
-  res.json(expense);
+  try {
+    const expense = new Expense(req.body);
+    await expense.save();
+    res.json(expense);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.delete('/expenses/:id', async (req, res) => {
-  await Expense.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Deleted' });
+  try {
+    await Expense.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.listen(5000, () => console.log('Server running on port 5000'));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
