@@ -190,19 +190,24 @@
   // Load all expenses from MongoDB when page first loads
 async function loadAllExpenses() {
   try {
-    const response = await fetch('http://localhost:5000/expenses');
+    const response = await fetch('https://expense-tracker-backend-mmug.onrender.com/expenses');
     expenses = await response.json();
     render();
   } catch (error) {
     console.log('Error loading expenses:', error);
   }
 }
+const response = await fetch('https://expense-tracker-backend-mmug.onrender.com/expenses', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ desc, amount, category, date })
+});
 
 // Call this when page loads
 window.onload = loadAllExpenses;
 async function deleteExpense(id) {
   try {
-    await fetch(`http://localhost:5000/expenses/${id}`, {
+    await fetch(`https://expense-tracker-backend-mmug.onrender.com/expenses/${id}`, {
       method: 'DELETE'
     });
     expenses = expenses.filter(e => e._id !== id);
