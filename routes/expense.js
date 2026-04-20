@@ -5,16 +5,20 @@ const Expense = require("../models/Expense");
 // AWS SNS
 const AWS = require("aws-sdk");
 
-const sns = new AWS.SNS({
+// 🔥 IMPORTANT: if using Render, you should use env vars
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: "ap-south-1"
 });
+
+const sns = new AWS.SNS();
 
 
 // ➤ ADD EXPENSE
 router.post("/add-expense", async (req, res) => {
   try {
 
-    // ✅ ONLY ONE CREATE (FIXED)
     const expense = await Expense.create({
       desc: req.body.desc || "No Desc",
       amount: Number(req.body.amount) || 0,
@@ -31,7 +35,7 @@ router.post("/add-expense", async (req, res) => {
     res.json(expense);
 
   } catch (err) {
-    console.log(err);
+    console.log("ADD EXPENSE ERROR:", err);
     res.status(500).json({ message: "Error adding expense" });
   }
 });
@@ -43,6 +47,7 @@ router.get("/expenses", async (req, res) => {
     const expenses = await Expense.find().sort({ _id: -1 });
     res.json(expenses);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: "Error fetching expenses" });
   }
 });
@@ -54,7 +59,24 @@ router.delete("/expenses/:id", async (req, res) => {
     await Expense.findByIdAndDelete(req.params.id);
     res.json({ message: "Deleted" });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: "Error deleting expense" });
+  }
+});
+
+
+// ➤ TEST SMS
+router.get("/test-sms", async (req, res) => {
+  try {
+    await sns.publish({
+      Message: "Test SMS from Expense Tracker",
+      TopicArn: "arn:aws:sns:ap-south-1:721572846396:expense-alert-topic"
+    }).promise();
+
+    res.send("✅ SMS Sent Successfully");
+  } catch (err) {
+    console.log("SNS ERROR:", err);
+    res.status(500).send("❌ SMS Failed");
   }
 });
 
