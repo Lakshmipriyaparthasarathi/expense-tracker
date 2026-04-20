@@ -107,6 +107,9 @@ button:hover { background: #4338CA; }
   </div>
 
   <div class="card">
+
+    <button onclick="resetUI()">Reset UI</button>
+
     <div class="section-title">Expenses</div>
     <div id="list"></div>
   </div>
@@ -185,14 +188,10 @@ async function addExpense() {
     body: JSON.stringify(payload)
   });
 
-  const data = await res.json();
+  await res.json();
 
-  console.log("ADD RESPONSE:", data);
-
-  // ✅ ALWAYS RELOAD FROM DB (not local state)
   await load();
 
-  // clear inputs
   desc.value = "";
   amount.value = "";
 
@@ -202,17 +201,13 @@ async function addExpense() {
 
 // LOAD
 async function load() {
-  try {
-    const res = await fetch(`${BASE_URL}/expenses`);
-    const data = await res.json();
+  const res = await fetch(`${BASE_URL}/expenses`);
+  const data = await res.json();
 
-    expenses = Array.isArray(data) ? data : [];
-
-    render();
-  } catch (err) {
-    console.log("LOAD ERROR:", err);
-  }
+  expenses = Array.isArray(data) ? data : [];
+  render();
 }
+
 
 // DELETE
 async function del(id) {
@@ -221,6 +216,13 @@ async function del(id) {
   });
 
   load();
+}
+
+
+// RESET UI ONLY
+function resetUI() {
+  expenses = [];
+  render();
 }
 
 
@@ -255,6 +257,7 @@ function render() {
 
   document.getElementById("total").innerText = "₹" + total;
 }
+
 </script>
 
 </body>
