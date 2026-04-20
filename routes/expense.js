@@ -16,6 +16,12 @@ router.post("/add-expense", async (req, res) => {
 
     // SAVE TO DB
     const expense = await Expense.create(req.body);
+    const expense = await Expense.create({
+  desc: req.body.desc || "No Desc",
+  amount: Number(req.body.amount) || 0,
+  category: req.body.category || "Other",
+  date: req.body.date || new Date().toISOString().split("T")[0]
+});
 
     // SEND SMS VIA SNS
     await sns.publish({

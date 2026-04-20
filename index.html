@@ -229,27 +229,32 @@ function render() {
 
   let total = 0;
 
-  list.innerHTML = expenses.map(e => {
+  document.getElementById("list").innerHTML =
+    expenses.map(e => {
 
-    total += Number(e.amount);
+      const desc = e.desc || "No Description";
+      const category = e.category || "Unknown";
+      const date = e.date || "No Date";
+      const amount = Number(e.amount) || 0;
 
-    return `
-      <div class="expense-item">
-        <div>
-          <b>${e.desc}</b><br>
-          <small>${e.category} | ${e.date}</small>
+      total += amount;
+
+      return `
+        <div class="expense-item">
+          <div>
+            <b>${desc}</b><br>
+            <small>${category} | ${date}</small>
+          </div>
+          <div>
+            ₹${amount}
+            <button onclick="del('${e._id}')">x</button>
+          </div>
         </div>
-        <div>
-          ₹${e.amount}
-          <button onclick="del('${e._id}')">x</button>
-        </div>
-      </div>
-    `;
-  }).join("");
+      `;
+    }).join("");
 
-  total.innerText = "₹" + total;
+  document.getElementById("total").innerText = "₹" + total;
 }
-
 </script>
 
 </body>
