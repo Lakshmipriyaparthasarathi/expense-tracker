@@ -61,10 +61,9 @@ button:hover { background: #4338CA; }
 
 <div class="app">
 
-<!-- HEADER -->
 <div class="header">
   <h2>Expense Tracker</h2>
-  <p>Full Stack App</p>
+  <p>Session Based App</p>
 </div>
 
 <!-- LOGIN -->
@@ -107,9 +106,6 @@ button:hover { background: #4338CA; }
   </div>
 
   <div class="card">
-
-    <button onclick="resetUI()">Reset UI</button>
-
     <div class="section-title">Expenses</div>
     <div id="list"></div>
   </div>
@@ -122,7 +118,9 @@ button:hover { background: #4338CA; }
 
 const BASE_URL = "https://expense-tracker-backend-mmug.onrender.com/api";
 
+// 🔥 SESSION STATE (RESET EVERY LOGIN)
 let expenses = [];
+let total = 0;
 
 // default date
 document.addEventListener("DOMContentLoaded", () => {
@@ -131,13 +129,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-// REGISTER
+// REGISTER (unchanged)
 async function register() {
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Lakshmi",
+      name: "User",
       email: email.value,
       password: password.value
     })
@@ -148,7 +146,7 @@ async function register() {
 }
 
 
-// LOGIN
+// LOGIN (🔥 RESET EVERYTHING HERE)
 async function login() {
 
   const res = await fetch(`${BASE_URL}/auth/login`, {
@@ -165,97 +163,72 @@ async function login() {
   result.innerText = data.message || data.error;
 
   if (res.ok) {
+
+    // 🔥 SWITCH UI
     loginPage.style.display = "none";
     dashboard.style.display = "block";
-    load();
+
+    // 🔥 RESET SESSION DATA
+    expenses = [];
+    total = 0;
+
+    render();
   }
 }
 
 
-// ADD EXPENSE
+// ADD EXPENSE (SESSION ONLY)
 async function addExpense() {
 
-  const payload = {
+  const amountVal = Number(amount.value);
+
+  const newExpense = {
     desc: desc.value,
-    amount: amount.value,
+    amount: amountVal,
     category: category.value,
     date: date.value
   };
 
-  const res = await fetch(`${BASE_URL}/add-expense`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  expenses.push(newExpense);
 
-  await res.json();
+  total += amountVal;
 
-  await load();
+  render();
 
+  // clear inputs
   desc.value = "";
   amount.value = "";
 
   result.innerText = "✅ Expense Added";
+
+  // 🔥 SNS ALERT (ONLY WHEN LIMIT EXCEEDS)
+  if (total > 5000) {
+    fetch(`${BASE_URL}/alert-sms`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ total })
+    });
+  }
 }
 
 
-// LOAD
-async function load() {
-  const res = await fetch(`${BASE_URL}/expenses`);
-  const data = await res.json();
-
-  expenses = Array.isArray(data) ? data : [];
-  render();
-}
-
-
-// DELETE
-async function del(id) {
-  await fetch(`${BASE_URL}/expenses/${id}`, {
-    method: "DELETE"
-  });
-
-  load();
-}
-
-
-// RESET UI ONLY
-function resetUI() {
-  expenses = [];
-  render();
-}
-
-
-// RENDER
+// RENDER UI
 function render() {
 
-  let total = 0;
+  document.getElementById("total").innerText = "₹" + total;
 
   document.getElementById("list").innerHTML =
-    expenses.map(e => {
-
-      const desc = e.desc || "No Description";
-      const category = e.category || "Unknown";
-      const date = e.date || "No Date";
-      const amount = Number(e.amount) || 0;
-
-      total += amount;
-
-      return `
-        <div class="expense-item">
-          <div>
-            <b>${desc}</b><br>
-            <small>${category} | ${date}</small>
-          </div>
-          <div>
-            ₹${amount}
-            <button onclick="del('${e._id}')">x</button>
-          </div>
+    expenses.map((e, i) => `
+      <div class="expense-item">
+        <div>
+          <b>${e.desc}</b><br>
+          <small>${e.category} | ${e.date}</small>
         </div>
-      `;
-    }).join("");
-
-  document.getElementById("total").innerText = "₹" + total;
+        <div>
+          ₹${e.amount}
+        </div>
+      </div>
+    `).join("");
 }
 
 </script>
