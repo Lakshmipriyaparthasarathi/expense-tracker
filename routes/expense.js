@@ -14,16 +14,15 @@ const sns = new AWS.SNS({
 router.post("/add-expense", async (req, res) => {
   try {
 
-    // SAVE TO DB
-    const expense = await Expense.create(req.body);
+    // ✅ ONLY ONE CREATE (FIXED)
     const expense = await Expense.create({
-  desc: req.body.desc || "No Desc",
-  amount: Number(req.body.amount) || 0,
-  category: req.body.category || "Other",
-  date: req.body.date || new Date().toISOString().split("T")[0]
-});
+      desc: req.body.desc || "No Desc",
+      amount: Number(req.body.amount) || 0,
+      category: req.body.category || "Other",
+      date: req.body.date || new Date().toISOString().split("T")[0]
+    });
 
-    // SEND SMS VIA SNS
+    // SNS ALERT
     await sns.publish({
       Message: `Expense Added: ${expense.desc} - ₹${expense.amount}`,
       TopicArn: "arn:aws:sns:ap-south-1:721572846396:expense-alert-topic"
