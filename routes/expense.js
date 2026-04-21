@@ -5,7 +5,7 @@ const Expense = require("../models/Expense");
 // AWS SNS
 const AWS = require("aws-sdk");
 
-// 🔥 AWS CONFIG (RENDER SAFE)
+// AWS CONFIG (Render safe)
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -31,19 +31,23 @@ router.post("/add-expense", async (req, res) => {
 
     console.log("🔥 EXPENSE SAVED:", expense);
 
-    // SNS TRIGGER
-    console.log("🔥 ABOUT TO SEND SNS");
-
+    // SNS ALERT
     try {
       const result = await sns.publish({
         Message: `Expense Added: ${expense.desc} - ₹${expense.amount}`,
-        TopicArn: "arn:aws:sns:ap-south-1:721572846396:expense-alert-topic"
+        TopicArn: "arn:aws:sns:ap-south-1:721572846396:expense-alert-topic",
+        MessageAttributes: {
+          "AWS.SNS.SMS.SMSType": {
+            DataType: "String",
+            StringValue: "Transactional"
+          }
+        }
       }).promise();
 
       console.log("✅ SNS SUCCESS:", result);
 
     } catch (snsErr) {
-      console.log("❌ SNS ERROR:", snsErr);
+      console.log("❌ SNS ERROR:", snsErr.message || snsErr);
     }
 
     res.json(expense);
@@ -61,7 +65,7 @@ router.get("/expenses", async (req, res) => {
     const expenses = await Expense.find().sort({ _id: -1 });
     res.json(expenses);
   } catch (err) {
-    console.log("❌ FETCH ERROR:", err);
+    console.log(err);
     res.status(500).json({ message: "Error fetching expenses" });
   }
 });
@@ -73,7 +77,7 @@ router.delete("/expenses/:id", async (req, res) => {
     await Expense.findByIdAndDelete(req.params.id);
     res.json({ message: "Deleted" });
   } catch (err) {
-    console.log("❌ DELETE ERROR:", err);
+    console.log(err);
     res.status(500).json({ message: "Error deleting expense" });
   }
 });
@@ -92,7 +96,7 @@ router.get("/test-sms", async (req, res) => {
     res.send("✅ SMS Sent Successfully");
 
   } catch (err) {
-    console.log("❌ TEST SNS ERROR:", err);
+    console.log("❌ TEST SNS ERROR:", err.message || err);
     res.status(500).send("❌ SMS Failed");
   }
 });
